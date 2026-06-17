@@ -300,6 +300,11 @@
             <label>Max</label>
             <input type="number" id="inputMax" value="1000" onchange="setMax()">
         </div>
+        <div class="controls-inputs">
+            <label>Opacidade</label>
+            <input type="range" id="inputOpacidade" min="0" max="100" value="100" oninput="setOpacidade()" style="width:120px; height:36px;">
+            <span id="opacidadeValor" style="color:#888; font-size:13px; font-weight:600;">100%</span>
+        </div>
     </div>
 
     <script>
@@ -369,6 +374,12 @@
         function setAtual() {
             atual = Math.max(0, Math.min(parseInt(document.getElementById('inputAtual').value) || 0, max));
             salvar();
+        }
+
+        function setOpacidade() {
+            const val = document.getElementById('inputOpacidade').value;
+            document.getElementById('opacidadeValor').textContent = val + '%';
+            document.querySelector('.widget-container').style.opacity = val / 100;
         }
 
         function spawnParticles() {
