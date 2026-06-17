@@ -427,6 +427,8 @@
 
         // A cada 30 minutos mostra o crédito automaticamente
         setInterval(mostrarCredito, 30 * 60 * 1000);
+        // Mostra uma vez ao carregar (após 3 segundos)
+        setTimeout(mostrarCredito, 3000);
 
         renderMeta();
         spawnParticles();
