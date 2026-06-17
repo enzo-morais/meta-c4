@@ -379,9 +379,22 @@
         function setOpacidade() {
             const val = document.getElementById('inputOpacidade').value;
             document.getElementById('opacidadeValor').textContent = val + '%';
-            const alpha = (val / 100) * 0.6;
-            document.querySelector('.widget-container').style.background = `rgba(40, 40, 40, ${alpha})`;
+            const alpha = val / 100;
+            document.querySelector('.widget-container').style.background = `rgba(40, 40, 40, ${alpha * 0.6})`;
+            // Salva no Firebase pra refletir no OBS
+            db.ref('opacidade').set(val);
         }
+
+        // Escuta opacidade do Firebase
+        db.ref('opacidade').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val !== null) {
+                document.getElementById('inputOpacidade').value = val;
+                document.getElementById('opacidadeValor').textContent = val + '%';
+                const alpha = val / 100;
+                document.querySelector('.widget-container').style.background = `rgba(40, 40, 40, ${alpha * 0.6})`;
+            }
+        });
 
         function spawnParticles() {
             const container = document.getElementById('particles');
