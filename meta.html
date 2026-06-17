@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Meta C4 Rust - Stream Overlay</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000000;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .widget-wrapper {
+            position: relative;
+        }
+
+        /* Widget */
+        .widget-container {
+            position: relative;
+            width: 380px;
+            padding: 10px 16px;
+            background: rgba(40, 40, 40, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        /* C4 grande no fundo à esquerda */
+        .c4-background {
+            position: absolute;
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Partículas com blur */
+        .particle-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .c4-particle {
+            position: absolute;
+            object-fit: contain;
+            bottom: -10px;
+            opacity: 0;
+            pointer-events: none;
+            filter: blur(2px);
+            animation: float-up 5s linear infinite;
+        }
+
+        @keyframes float-up {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.4; }
+            80% { opacity: 0.2; }
+            100% { transform: translateY(-100px) rotate(180deg); opacity: 0; }
+        }
+
+        /* Números */
+        .header-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+            z-index: 2;
+        }
+
+        .meta-numbers {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-numbers .separator {
+            color: #ffffff;
+            margin: 0 2px;
+        }
+
+        .meta-numbers .max-value {
+            color: #ffffff;
+        }
+
+        /* Barra */
+        .progress-track {
+            position: relative;
+            width: 100%;
+            height: 10px;
+            background: #111;
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7f1d1d, #dc2626);
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+
+        /* Texto abaixo da barra */
+        .meta-label {
+            position: relative;
+            text-align: center;
+            margin-top: 5px;
+            font-size: 9px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 2;
+        }
+
+        /* Painel de controle */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #141414;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 999;
+        }
+
+        .controls-title {
+            color: #888;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-align: center;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls button {
+            height: 40px;
+            min-width: 40px;
+            padding: 0 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            transition: transform 0.1s;
+        }
+
+        .controls button:active { transform: scale(0.9); }
+
+        .btn-m { background: #7f1d1d; }
+        .btn-p { background: #16a34a; }
+        .btn-p10 { background: #0d9488; }
+        .btn-rst { background: #333; font-size: 13px; }
+
+        .controls-inputs {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls-inputs label {
+            color: #888;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .controls-inputs input {
+            width: 75px;
+            height: 36px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #1a1a1a;
+            color: #fff;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .controls-inputs input:focus { outline: none; border-color: #dc2626; }
+
+        /* Modo OBS - esconde controle */
+        body.obs-mode .controls { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="widget-wrapper">
+        <div class="widget-container">
+            <img class="c4-background" src="c4.webp" alt="C4">
+            <div class="particle-zone" id="particles"></div>
+
+            <div class="header-row">
+                <div class="meta-numbers">
+                    <span class="current-value">0</span><span class="separator">/</span><span class="max-value">1.000</span>
+                </div>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+            <div class="meta-label">C4 Craftada</div>
+        </div>
+    </div>
+
+    <!-- Painel de controle -->
+    <div class="controls" id="painel">
+        <div class="controls-title">Controle da Meta</div>
+        <div class="controls-row">
+            <button class="btn-m" onclick="mudarMeta(-1)">−</button>
+            <button class="btn-p" onclick="mudarMeta(1)">+</button>
+            <button class="btn-p10" onclick="mudarMeta(10)">+10</button>
+            <button class="btn-p10" onclick="mudarMeta(50)">+50</button>
+            <button class="btn-rst" onclick="resetarMeta()">Zerar</button>
+        </div>
+        <div class="controls-inputs">
+            <label>Atual</label>
+            <input type="number" id="inputAtual" value="0" onchange="setAtual()">
+            <label>Max</label>
+            <input type="number" id="inputMax" value="1000" onchange="setMax()">
+        </div>
+    </div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDI96XdvA5-3a35zXQrDSxLk04JaAQjo0",
+            authDomain: "meta-50d2d.firebaseapp.com",
+            databaseURL: "https://meta-50d2d-default-rtdb.firebaseio.com",
+            projectId: "meta-50d2d",
+            storageBucket: "meta-50d2d.firebasestorage.app",
+            messagingSenderId: "789203336844",
+            appId: "1:789203336844:web:8a4ae2923439c9acbc45a9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const metaRef = db.ref('meta');
+
+        let atual = 0;
+        let max = 1000;
+
+        // Modo OBS: adiciona ?obs=1 na URL pra esconder o painel
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('obs')) {
+            document.body.classList.add('obs-mode');
+        }
+
+        // Escuta mudanças em tempo real do Firebase
+        metaRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                atual = data.atual || 0;
+                max = data.max || 1000;
+                renderMeta();
+            }
+        });
+
+        function renderMeta() {
+            const pct = Math.min(Math.max((atual / max) * 100, 0), 100);
+            document.querySelector('.current-value').textContent = atual.toLocaleString('pt-BR');
+            document.querySelector('.max-value').textContent = max.toLocaleString('pt-BR');
+            document.getElementById('progress').style.width = `${pct}%`;
+            document.getElementById('inputAtual').value = atual;
+            document.getElementById('inputMax').value = max;
+        }
+
+        function salvar() {
+            metaRef.set({ atual, max });
+        }
+
+        function mudarMeta(v) {
+            atual = Math.max(0, Math.min(atual + v, max));
+            salvar();
+        }
+
+        function resetarMeta() {
+            atual = 0;
+            salvar();
+        }
+
+        function setMax() {
+            max = Math.max(1, parseInt(document.getElementById('inputMax').value) || 1000);
+            atual = Math.min(atual, max);
+            salvar();
+        }
+
+        function setAtual() {
+            atual = Math.max(0, Math.min(parseInt(document.getElementById('inputAtual').value) || 0, max));
+            salvar();
+        }
+
+        function spawnParticles() {
+            const container = document.getElementById('particles');
+            setInterval(() => {
+                if (container.childElementCount >= 8) return;
+                const img = document.createElement('img');
+                img.src = 'c4.webp';
+                img.className = 'c4-particle';
+                img.style.left = `${Math.random() * 80 + 10}%`;
+                img.style.animationDuration = `${(Math.random() * 2 + 4).toFixed(1)}s`;
+                const s = Math.floor(Math.random() * 14 + 32);
+                img.style.width = `${s}px`;
+                img.style.height = `${s}px`;
+                img.addEventListener('animationend', () => img.remove());
+                container.appendChild(img);
+            }, 600);
+        }
+
+        renderMeta();
+        spawnParticles();
+    </script>
+
+</body>
+</html>
