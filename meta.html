@@ -379,7 +379,8 @@
         function setOpacidade() {
             const val = document.getElementById('inputOpacidade').value;
             document.getElementById('opacidadeValor').textContent = val + '%';
-            document.querySelector('.widget-container').style.opacity = val / 100;
+            const alpha = (val / 100) * 0.6;
+            document.querySelector('.widget-container').style.background = `rgba(40, 40, 40, ${alpha})`;
         }
 
         function spawnParticles() {
