@@ -227,8 +227,6 @@
             margin-bottom: 6px;
             padding: 4px 12px;
             border-radius: 20px;
-            background: #020202;
-            overflow: hidden;
             pointer-events: none;
             z-index: 10;
             opacity: 0;
@@ -244,29 +242,6 @@
         .credit-bar.hiding {
             opacity: 0;
             max-height: 0;
-        }
-
-        .credit-bar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background:
-                radial-gradient(0.8px 0.8px at 8% 25%, rgba(255,255,255,0.4), transparent),
-                radial-gradient(0.6px 0.6px at 22% 70%, rgba(255,255,255,0.3), transparent),
-                radial-gradient(0.8px 0.8px at 38% 15%, rgba(255,255,255,0.35), transparent),
-                radial-gradient(0.5px 0.5px at 52% 55%, rgba(255,255,255,0.25), transparent),
-                radial-gradient(0.7px 0.7px at 67% 35%, rgba(255,255,255,0.3), transparent),
-                radial-gradient(0.6px 0.6px at 80% 75%, rgba(255,255,255,0.35), transparent),
-                radial-gradient(0.8px 0.8px at 92% 20%, rgba(255,255,255,0.3), transparent);
-            animation: stars-twinkle 4s ease-in-out infinite alternate;
-        }
-
-        @keyframes stars-twinkle {
-            0% { opacity: 0.5; }
-            100% { opacity: 1; }
         }
 
         .credit-bar span {
