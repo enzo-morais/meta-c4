@@ -292,7 +292,7 @@
             <button class="btn-p10" onclick="mudarMeta(10)">+10</button>
             <button class="btn-p10" onclick="mudarMeta(50)">+50</button>
             <button class="btn-rst" onclick="resetarMeta()">Zerar</button>
-            <button class="btn-rst" onclick="mostrarCredito()">Void</button>
+            <button class="btn-rst" onclick="triggarVoid()">Void</button>
         </div>
         <div class="controls-inputs">
             <label>Atual</label>
@@ -400,8 +400,21 @@
             }, 8000);
         }
 
+        // Botão Void salva no Firebase pra todos verem
+        function triggarVoid() {
+            db.ref('void').set({ show: Date.now() });
+        }
+
+        // Escuta o comando void do Firebase
+        db.ref('void').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.show) {
+                mostrarCredito();
+            }
+        });
+
         // A cada 30 minutos mostra o crédito automaticamente
-        setInterval(mostrarCredito, 30 * 60 * 1000);
+        setInterval(() => { db.ref('void').set({ show: Date.now() }); }, 30 * 60 * 1000);
         // Mostra uma vez ao carregar (após 3 segundos)
         setTimeout(mostrarCredito, 3000);
 
